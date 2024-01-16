@@ -5,7 +5,7 @@
 const jsonschema = require("jsonschema");
 const express = require("express");
 
-const { BadRequestError } = require("../expressError");
+const { BadRequestError, ExpressError } = require("../expressError");
 const { ensureLoggedIn } = require("../middleware/auth");
 const Company = require("../models/company");
 
@@ -47,17 +47,35 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  * - maxEmployees
  * - nameLike (will find case-insensitive, partial matches)
  *
+ * Accepts search filters as req.query
+ *
+ * Converts minEmployees and maxEmployees to numbers if they undefined
+ * 
+ * Checks if minEmployees is greater than maxEmployees
+ * 
+ * Fetches companies, if no filters are provided it will still return all companies
+ * 
  * Authorization required: none
  */
 
 router.get("/", async function (req, res, next) {
   try {
-    const companies = await Company.findAll();
+    let { name, minEmployees, maxEmployees } = req.query;
+
+    minEmployees = minEmployees ? parseInt(minEmployees) : undefined;
+    maxEmployees = maxEmployees ? parseInt(maxEmployees) : undefined;
+
+    if (minEmployees && maxEmployees && minEmployees > maxEmployees) {
+      throw new ExpressError('Min Employees greater than Max Employees', 400);
+    }
+
+    const companies = await Company.findAll({ name, minEmployees, maxEmployees });
     return res.json({ companies });
   } catch (err) {
     return next(err);
   }
 });
+
 
 /** GET /[handle]  =>  { company }
  *
