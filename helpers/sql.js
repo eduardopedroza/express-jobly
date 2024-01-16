@@ -1,6 +1,23 @@
 const { BadRequestError } = require("../expressError");
 
-// THIS NEEDS SOME GREAT DOCUMENTATION.
+/**
+ * Generates a SQL query for a partial update.
+ *
+ * This is a "partial update", it's fine if `dataToUpdate` doesn't contain all the
+ * fields; this function only changes the provided ones.
+ *
+ * `dataToUpdate` can include any set of key-value pairs where the key represents the field name
+ * and the value represents the new value to set for that field.
+ *
+ * `jsToSql` is used to map JavaScript-style camelCased variable names to SQL-style snake_cased
+ * column names, if necessary.
+ *
+ * Returns an object with two properties:
+ *   - setCols: A string of column-value pairs for the SQL query.
+ *   - values: An array of values corresponding to the column-value pairs.
+ *
+ */
+
 
 function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   const keys = Object.keys(dataToUpdate);
