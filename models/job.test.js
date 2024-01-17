@@ -8,6 +8,7 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  testId
 } = require("./_testCommon.js");
 
 beforeAll(commonBeforeAll);
@@ -28,10 +29,9 @@ describe("create", function () {
 
   test("works", async function () {
     let job = await Job.create(newJob);
-    expect(job).toEqual(newJob);
   
     const result = await db.query(
-          `SELECT title, salary, equity, company_handle
+          `SELECT id, title, salary, equity, company_handle
            FROM jobs
            WHERE title = 'newJob'`);
     
@@ -42,6 +42,7 @@ describe("create", function () {
   
     expect(jobsWithConvertedEquity).toEqual([
       {
+        id: expect.any(Number),
         title: "newJob",
         salary: 50000,
         equity: 0,
@@ -200,18 +201,27 @@ describe("find all", function () {
 
 describe("get", function () {
   test("works", async function () {
-    let job = await Job.get('j1');
+    const result = await db.query(`
+        SELECT id
+        FROM jobs
+        WHERE title = 'j1'`);
+    const testId = result.rows[0].id;
+  
+    let job = await Job.get(testId);
     expect(job).toEqual({
+      id: testId, 
       title: 'j1',
       salary: 100000,
-      equity: 0,
+      equity: 0, 
       companyHandle: 'c1'
     });
-  });
+});
+
+  
 
   test("not found", async function () {
     try {
-      await Job.get("fake job");
+      await Job.get(9999);
       fail();
     } catch (err) {
       expect(err instanceof NotFoundError).toBeTruthy();

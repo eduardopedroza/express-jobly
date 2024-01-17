@@ -198,6 +198,9 @@ describe("GET /users", function () {
 
 describe("GET /users/:username", function () {
   test("works for admins", async function () {
+    const jobRes = await db.query(`SELECT id FROM jobs WHERE title = 'j2'`);
+    const jobId = jobRes.rows[0].id;
+
     const resp = await request(app)
         .get(`/users/u1`)
         .set("authorization", `Bearer ${adminToken}`);
@@ -208,11 +211,17 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: false,
+        jobs: [
+        jobId
+        ]
       },
     });
   });
 
   test("works for target users", async function () {
+    const jobRes = await db.query(`SELECT id FROM jobs WHERE title = 'j2'`);
+    const jobId = jobRes.rows[0].id;
+
     const resp = await request(app)
         .get(`/users/u1`)
         .set("authorization", `Bearer ${u1Token}`);
@@ -223,6 +232,9 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: false,
+        jobs: [
+          jobId
+        ]
       },
     });
   });
@@ -380,6 +392,59 @@ describe("DELETE /users/:username", function () {
   test("not found if user missing", async function () {
     const resp = await request(app)
         .delete(`/users/nope`)
+        .set("authorization", `Bearer ${adminToken}`);
+    expect(resp.statusCode).toEqual(404);
+  });
+});
+
+/************************************** POST /users/:username/jobs/:id */
+describe("POST /users/:username/jobs/:id", function () {
+  test("works for admins", async function () {
+    const jobRes = await db.query(`SELECT id FROM jobs WHERE title = 'j1'`);
+    const jobId = jobRes.rows[0].id;
+
+    const resp = await request(app)
+        .post(`/users/u1/jobs/${jobId}`)
+        .set("authorization", `Bearer ${adminToken}`);
+    expect(resp.body).toEqual({
+      applied: jobId
+    });
+  });
+
+  test("works for target user", async function () {
+    const jobRes = await db.query(`SELECT id FROM jobs WHERE title = 'j1'`);
+    const jobId = jobRes.rows[0].id;
+
+    const resp = await request(app)
+        .post(`/users/u1/jobs/${jobId}`)
+        .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.body).toEqual({
+      applied: jobId
+    });
+  });
+
+  test("unauth for non-target user", async function () {
+    const jobRes = await db.query(`SELECT id FROM jobs WHERE title = 'j1'`);
+    const jobId = jobRes.rows[0].id;
+
+    const resp = await request(app)
+        .post(`/users/u2/jobs/${jobId}`)
+        .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("unauth for anon", async function () {
+    const jobRes = await db.query(`SELECT id FROM jobs WHERE title = 'j1'`);
+    const jobId = jobRes.rows[0].id;
+
+    const resp = await request(app)
+        .post(`/users/u2/jobs/${jobId}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("not found if job does not exist", async function () {
+    const resp = await request(app)
+        .post(`/users/u2/jobs/9999`)
         .set("authorization", `Bearer ${adminToken}`);
     expect(resp.statusCode).toEqual(404);
   });

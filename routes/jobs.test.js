@@ -34,9 +34,16 @@ describe("/POST", function () {
         .post("/jobs")
         .send(newJob)
         .set("authorization", `Bearer ${adminToken}`);
+    
+    const jobRes = await db.query(`SELECT id FROM jobs WHERE title = 'NewJob'`);
+    const jobId = jobRes.rows[0].id;
+
     expect(resp.statusCode).toEqual(201);
     expect(resp.body).toEqual({
-      job: newJob
+      job: {
+        id: jobId,
+        ...newJob
+      }
     });
   });
 
@@ -70,6 +77,8 @@ describe("/POST", function () {
     expect(resp.statusCode).toEqual(400);
   });
 });
+
+/************************************** GET /jobs */
 
 describe("/GET", function () {
   test("works: no filter", async function () {
@@ -184,12 +193,17 @@ describe("/GET", function () {
 });
 
 
+/************************************** POST /jobs/:id */
 
 describe("GET /jobs/:title", function () {
   test("works for anon", async function () {
-    const resp = await request(app).get(`/jobs/j1`);
+    const jobRes = await db.query(`SELECT id FROM jobs WHERE title = 'j1'`);
+    const jobId = jobRes.rows[0].id;
+
+    const resp = await request(app).get(`/jobs/${jobId}`);
     expect(resp.body).toEqual({
       job: {
+        id: jobId,
         title: 'j1',
         salary: 100000,
         equity: 0,
@@ -199,7 +213,7 @@ describe("GET /jobs/:title", function () {
   });
 
   test("not found for no such job", async function () {
-    const resp = await request(app).get(`/jobs/nope`);
+    const resp = await request(app).get(`/jobs/9999`);
     expect(resp.statusCode).toEqual(404);
   });
 });

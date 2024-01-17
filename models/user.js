@@ -9,6 +9,8 @@ const {
   UnauthorizedError,
 } = require("../expressError");
 
+const Job = require("./job.js");
+
 const { BCRYPT_WORK_FACTOR } = require("../config.js");
 
 /** Related functions for users. */
@@ -118,7 +120,7 @@ class User {
   /** Given a username, return data about user.
    *
    * Returns { username, first_name, last_name, is_admin, jobs }
-   *   where jobs is { id, title, company_handle, company_name, state }
+   *   where jobs is a list of jobs the user has applied for[ jobId, jobId, ... ]
    *
    * Throws NotFoundError if user not found.
    **/
@@ -139,6 +141,16 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
 
+    const applicationsRes = await db.query(
+          `SELECT job_id
+           FROM applications
+           WHERE username=$1`,
+          [username]);
+    
+    const jobIds = applicationsRes.rows.map(row => row.job_id);
+    
+    user.jobs = jobIds;
+    
     return user;
   }
 
@@ -204,6 +216,26 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
   }
+
+  /** Apply for job
+   * 
+   * takes valid username and jobId and creates a new job application
+   * 
+   * Returns { applied: jobId }
+   */
+  static async apply(username, jobId) {
+    await User.get(username);
+    await Job.get(jobId);
+    
+    const result = await db.query(
+          `INSERT INTO applications (username, job_id)
+           VALUES ($1, $2)
+           RETURNING job_id AS "applied"`,
+          [username, jobId]);
+  
+    return result.rows[0];
+  }
+  
 }
 
 

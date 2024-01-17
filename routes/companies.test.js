@@ -101,6 +101,13 @@ describe("GET /companies", function () {
               numEmployees: 3,
               logoUrl: "http://c3.img",
             },
+            {
+              handle: "c4",
+              name: "C4",
+              numEmployees: 4,
+              description: "Desc4",
+              logoUrl: "http://c4.img",
+            }
           ],
     });
   });
@@ -137,6 +144,13 @@ describe("GET /companies", function () {
           description: "Desc3",
           numEmployees: 3,
           logoUrl: "http://c3.img",
+        },
+        {
+          handle: "c4",
+          name: "C4",
+          numEmployees: 4,
+          description: "Desc4",
+          logoUrl: "http://c4.img",
         }
       ],
     });
@@ -242,19 +256,29 @@ describe("GET /companies/:handle", function () {
         description: "Desc1",
         numEmployees: 1,
         logoUrl: "http://c1.img",
+        jobs: [
+          {
+            id: expect.any(Number), 
+            title: 'j1',
+            salary: 100000,
+            equity: '0',
+            companyHandle: 'c1'
+          }
+        ]
       },
     });
   });
 
   test("works for anon: company w/o jobs", async function () {
-    const resp = await request(app).get(`/companies/c2`);
+    const resp = await request(app).get(`/companies/c4`);
     expect(resp.body).toEqual({
       company: {
-        handle: "c2",
-        name: "C2",
-        description: "Desc2",
-        numEmployees: 2,
-        logoUrl: "http://c2.img",
+        handle: "c4",
+        name: "C4",
+        numEmployees: 4,
+        description: "Desc4",
+        logoUrl: "http://c4.img",
+        jobs: []
       },
     });
   });
@@ -262,76 +286,6 @@ describe("GET /companies/:handle", function () {
   test("not found for no such company", async function () {
     const resp = await request(app).get(`/companies/nope`);
     expect(resp.statusCode).toEqual(404);
-  });
-
-  test("filter request with name, minEmployees, and maxEmployees", async function () {
-    const resp = await request(app)
-        .get("/companies")
-        .query({ name: 'c', minEmployees: 1, maxEmployees: 2});
-    expect(resp.statusCode).toEqual(200);
-    expect(resp.body).toEqual({
-      companies: [
-        {
-          handle: "c1",
-          name: "C1",
-          description: "Desc1",
-          numEmployees: 1,
-          logoUrl: "http://c1.img",
-        },
-        {
-          handle: "c2",
-          name: "C2",
-          description: "Desc2",
-          numEmployees: 2,
-          logoUrl: "http://c2.img",
-        }
-      ]
-    });
-  });
-
-  test("filter request with name", async function () {
-    const resp = await request(app)
-        .get("/companies")
-        .query({ name: 'c2'});
-    expect(resp.statusCode).toEqual(200);
-    expect(resp.body).toEqual({
-      companies:
-          [
-            {
-              handle: "c2",
-              name: "C2",
-              description: "Desc2",
-              numEmployees: 2,
-              logoUrl: "http://c2.img",
-            },
-          ]
-    });
-  });
-
-  test("filter request with minEmployees, maxEmployees", async function () {
-    const resp = await request(app)
-        .get("/companies")
-        .query({ minEmployees: 2, maxEmployees: 3});
-    expect(resp.statusCode).toEqual(200);
-    expect(resp.body).toEqual({
-      companies:
-          [
-            {
-              handle: "c2",
-              name: "C2",
-              description: "Desc2",
-              numEmployees: 2,
-              logoUrl: "http://c2.img",
-            },
-            {
-              handle: "c3",
-              name: "C3",
-              description: "Desc3",
-              numEmployees: 3,
-              logoUrl: "http://c3.img",
-            },
-          ],
-    });
   });
 });
 

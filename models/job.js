@@ -29,7 +29,7 @@ class Job {
       `INSERT INTO jobs
        (title, salary, equity, company_handle)
        VALUES ($1, $2, $3, $4)
-       RETURNING title, salary, equity, company_handle AS "companyHandle"`,
+       RETURNING id, title, salary, equity, company_handle AS "companyHandle"`,
       [title, salary, equity, companyHandle]
     );
 
@@ -91,25 +91,26 @@ class Job {
     return jobsWithConvertedEquity;
   }
   
-  /** Given a job title, return data about job.
+  /** Given a job id, return data about job.
    * 
    * Returns { title, salary, equity, companyHandle }
    * 
    * Throws NotFoundError if not found.
    */
-  static async get(title) {
+  static async get(id) {
     const jobRes = await db.query(
-      `SELECT title,
+      `SELECT id,
+              title,
               salary,
               equity,
               company_handle AS "companyHandle"
       FROM jobs
-      WHERE title = $1`,
-      [title]);
+      WHERE id = $1`,
+      [id]);
     
     const job = jobRes.rows[0];
 
-    if (!job) throw new NotFoundError(`No job: ${title}`)
+    if (!job) throw new NotFoundError(`No job with id: ${id}`)
     
     job.equity = Number(job.equity);
 
